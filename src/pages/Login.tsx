@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { z } from "zod";
 import { addHours } from "date-fns";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +47,10 @@ const Login = () => {
       localStorage.setItem("token", result.token);
       
       // Redirect user based on role if needed
-      window.location.href = result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard"
+      // window.location.href = result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard"
+      navigate(result.user.role === "MENTOR"
+        ? "/mentor-dashboard"
+        : "/mentee-dashboard");
     } catch (err) {
       if (err instanceof z.ZodError) {
         toast({

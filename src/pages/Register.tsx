@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { registerSchema } from "@/services/validation/registerSchema";
 import { z } from "zod";
 
 const Register = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleFromUrl = searchParams.get('role');
   
@@ -69,7 +70,10 @@ const Register = () => {
       // });
   
   
-      window.location.href = result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard";
+      // window.location.href = result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard";
+      navigate(result.user.role === "MENTOR"
+        ? "/mentor-dashboard"
+        : "/mentee-dashboard");
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const messages = error.errors.map((e) => e.message).join(' ');

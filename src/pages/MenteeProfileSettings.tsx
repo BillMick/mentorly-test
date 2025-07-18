@@ -247,7 +247,8 @@ const MenteeProfileSettings = () => {
         className: "bg-green-500 text-white",
       });
       setTimeout(() => {
-        window.location.href = "/mentee-profile-settings";
+        // window.location.href = "/mentee-profile-settings";
+        navigate('/mentee-profile-settings');
       }, 3000);
     } catch (error) {
       toast({

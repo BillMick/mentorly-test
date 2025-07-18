@@ -317,7 +317,8 @@ const MentorProfileSettings = () => {
         className: "bg-green-500 text-white",
       });
       setTimeout(() => {
-        window.location.href = "/mentor-profile-settings";
+        // window.location.href = "/mentor-profile-settings";
+        navigate('/mentor-profile-settings');
       }, 3000);
     } catch (error) {
       if (error instanceof z.ZodError) {

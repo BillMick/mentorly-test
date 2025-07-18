@@ -33,8 +33,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/search" element={<Search />} />
           <Route path="/abonnement" element={<Abonnement />} />
-          <Route path="/mentor-dashboard" element={<MentorDashboard />} />
-          {/* <Route path="/mentor-dashboard" element={<ProtectedRoute><MentorDashboard /></ProtectedRoute>} /> */}
+          <Route path="/mentor-dashboard" element={<ProtectedRoute><MentorDashboard /></ProtectedRoute>} />
           <Route path="/mentee-dashboard" element={<ProtectedRoute><MenteeDashboard /></ProtectedRoute>} />
           <Route path="/mentor-profile/:id" element={<MentorProfile />} />
           <Route path="/mentee-profile/:id" element={<MenteeProfile />} />
