@@ -1,0 +1,4 @@
+> Add "Number of visits" table
+> Add "Telephone" attribute to "MentorProfile" Table
+> Turn "experience" type (in MentorProfile) into "TEXT[]"
+> Turn nullable "experience" (in MentorProfile)

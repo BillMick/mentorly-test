@@ -1,0 +1,62 @@
+npx supabase@latest init
+
+npx supabase@latest db ...
+
+
+npx supabase@latest login
+npx supabase@latest projects list
+npx supabase@latest link
+
+npx supabase@latest functions new [function name]
+[update the supabase/config.toml file for deno.json fixing]
+npx supabase@latest functions deploy user-create
+
+git rm --cached path/to/file
+
+MENTOR 
+Object { id: "2c36e6fe-87d1-4a1f-b186-7df0bd36378f", email: "tom.cat@gmail.com", role: "MENTOR", is_verified: false, profile: (1) […], receivedRequests: [], ratings: [] }
+  email: "tom.cat@gmail.com"
+  id: "2c36e6fe-87d1-4a1f-b186-7df0bd36378f"
+  is_verified: false
+  profile: Array [ {…} ]
+    0: Object { id: "c04de7e1-dd90-4b7c-b4a4-59782878ef95", userId: "2c36e6fe-87d1-4a1f-b186-7df0bd36378f", fullname: "Tom Cat", …​​​
+    areas_of_expertise: Array []
+    availability: Object {  }
+    certifications: Array []
+    description: ""
+    diplomas: Array []
+    experience: ""
+    frequency: ""
+    fullname: "Tom Cat"
+    id: "c04de7e1-dd90-4b7c-b4a4-59782878ef95"
+    languages: Array []
+    location: ""
+    mentee_levels: Array []
+    price_per_session: null
+    profile_photo: ""
+    userId: "2c36e6fe-87d1-4a1f-b186-7df0bd36378f"
+    <prototype>: Object { … }
+    length: 1
+    <prototype>: Array []
+  ratings: Array []
+  receivedRequests: Array []
+  role: "MENTOR"
+  <prototype>: Object { … }
+
+
+
+{/* <div className="stat-card group hover:scale-105 transition-transform duration-300">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm font-medium text-muted-foreground mb-1">Mentorats Actifs</p>
+      <p className="text-3xl font-bold text-foreground">{menteeData.activeMentorships}</p>
+      <div className="flex items-center mt-2 text-green-400 text-xs">
+        <TrendingUp className="w-3 h-3 mr-1" />
+        +12% ce mois
+      </div>
+    </div>
+    <div className="avatar-glow">
+      <BookOpen className="w-8 h-8 text-primary" />
+    </div>
+  </div>
+</div> */}
