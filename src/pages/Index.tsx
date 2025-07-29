@@ -72,7 +72,6 @@ const Index = () => {
 
   const handleSearch = () => {
     // Navigate to search page with query
-    // window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
 

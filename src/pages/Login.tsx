@@ -47,10 +47,7 @@ const Login = () => {
       localStorage.setItem("token", result.token);
       
       // Redirect user based on role if needed
-      // window.location.href = result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard"
-      navigate(result.user.role === "MENTOR"
-        ? "/mentor-dashboard"
-        : "/mentee-dashboard");
+      navigate(result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard");
     } catch (err) {
       if (err instanceof z.ZodError) {
         toast({

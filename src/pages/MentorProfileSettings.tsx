@@ -110,7 +110,7 @@ const MentorProfileSettings = () => {
     // Fetch plans for subscription section
     setPlansLoading(true);
     getSubscriptionPlans().then(res => {
-      setPlans((res.plans || []).filter((p: any) => p.name === "Premium"));
+      setPlans((res.plans || []).filter((p: any) => p.category === "MENTOR"));
       setPlansLoading(false);
     });
   }, []);
@@ -317,7 +317,6 @@ const MentorProfileSettings = () => {
         className: "bg-green-500 text-white",
       });
       setTimeout(() => {
-        // window.location.href = "/mentor-profile-settings";
         navigate('/mentor-profile-settings');
       }, 3000);
     } catch (error) {

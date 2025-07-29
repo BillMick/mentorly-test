@@ -184,7 +184,7 @@ const MenteeProfileSettings = () => {
       // Fetch plans for subscription section
       setPlansLoading(true);
       getSubscriptionPlans().then(res => {
-        setPlans((res.plans || []).filter((p: any) => p.name === "Basic"));
+        setPlans((res.plans || []).filter((p: any) => p.category === "MENTEE"));
         setPlansLoading(false);
       });
     } catch (err) {
@@ -247,7 +247,6 @@ const MenteeProfileSettings = () => {
         className: "bg-green-500 text-white",
       });
       setTimeout(() => {
-        // window.location.href = "/mentee-profile-settings";
         navigate('/mentee-profile-settings');
       }, 3000);
     } catch (error) {

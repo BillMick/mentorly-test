@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,11 +69,7 @@ const Register = () => {
       //   fullName: result.user.fullname,
       // });
   
-  
-      // window.location.href = result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard";
-      navigate(result.user.role === "MENTOR"
-        ? "/mentor-dashboard"
-        : "/mentee-dashboard");
+      navigate(result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard");
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const messages = error.errors.map((e) => e.message).join(' ');
