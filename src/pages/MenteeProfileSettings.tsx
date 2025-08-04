@@ -19,6 +19,7 @@ import { menteeProfileSchema } from "@/services/validation/profileSchema";
 import { createClient } from "@supabase/supabase-js";
 import { unsubscribe } from "@/services/subscription/unsubscribe";
 import { getSubscriptionPlans } from "@/services/subscription/getSubscriptionPlans";
+import { subscribe } from "@/services/subscription/subscribe";
 
 const MenteeProfileSettings = () => {
   const navigate = useNavigate();
@@ -262,16 +263,8 @@ const MenteeProfileSettings = () => {
     if (!selectedPlanId || !mentee) return;
     setSubscribing(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ userId: mentee.id, planId: selectedPlanId })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await subscribe(mentee.id, selectedPlanId);
+      if (data.success) {
         toast({ title: 'Abonnement réussi', description: 'Votre abonnement a été activé.', className: 'bg-green-500 text-white' });
         // Refresh mentee data
         const user = getUserFromLocalStorage();

@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { format, parse, isValid } from "date-fns";
 import { rateMentor } from "@/services/profile/rateMentor";
+import { requestMentorship } from "@/services/request/requestMentorship";
+import { visitMentorProfile } from "@/services/profile/visitMentorProfile";
 
 const MentorProfile = () => {
   const { id } = useParams();
@@ -149,21 +151,13 @@ const MentorProfile = () => {
 
   // Count profile visit in DB when mentorData is loaded
   useEffect(() => {
-    if (!mentorData?.id) return;
-    const user = getUserFromLocalStorage();
-    if (!user || !user.id) return;
-    if (user.id === mentorData.id) return; // Don't count self-visits
-
-    fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/visit-mentor-profile`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ mentorUserId: mentorData.id, visitorUserId: user.id }),
-    })
-      .then(res => res.json())
-      .then(data => {
+    const visitMentorProfilePage = async () => {
+      if (!mentorData?.id) return;
+      const user = getUserFromLocalStorage();
+      if (!user || !user.id) return;
+      if (user.id === mentorData.id) return; // Don't count self-visits
+      try {
+        const data = await visitMentorProfile({ mentorUserId: mentorData.id, visitorUserId: user.id })
         if (!data.success) {
           toast({
             title: "Erreur de comptage de visite",
@@ -171,14 +165,15 @@ const MentorProfile = () => {
             variant: "destructive",
           });
         }
-      })
-      .catch(err => {
+      } catch (err) {
         toast({
           title: "Erreur réseau",
           description: err.message || "Impossible de compter la visite.",
           variant: "destructive",
         });
-      });
+      }
+    }
+    visitMentorProfilePage();
   }, [mentorData?.id]);
 
   // Check if mentee has an accepted request with this mentor
@@ -544,21 +539,13 @@ const MentorProfile = () => {
                       e.preventDefault();
                       setRequestLoading(true);
                       try {
-                        const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/request-mentorship`, {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                          },
-                          body: JSON.stringify({
-                            from_mentee_id: user.id,
-                            to_mentor_id: mentorData?.id,
-                            subject: requestSubject,
-                            message: requestMessage,
-                          }),
+                        const data = await requestMentorship({
+                          from_mentee_id: user.id,
+                          to_mentor_id: mentorData?.id,
+                          subject: requestSubject,
+                          message: requestMessage,
                         });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
+                        if (data.success) {
                           setRequestSubject("");
                           setRequestMessage("");
                           setShowRequestForm(false);

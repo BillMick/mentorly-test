@@ -19,6 +19,7 @@ import { mentorProfileSchema } from "@/services/validation/profileSchema";
 import { createClient } from "@supabase/supabase-js";
 import { getSubscriptionPlans } from "@/services/subscription/getSubscriptionPlans";
 import { unsubscribe } from "@/services/subscription/unsubscribe";
+import { subscribe } from "@/services/subscription/subscribe";
 
 const MentorProfileSettings = () => {
   const navigate = useNavigate();
@@ -119,16 +120,8 @@ const MentorProfileSettings = () => {
     if (!selectedPlanId || !mentor) return;
     setSubscribing(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ userId: mentor.id, planId: selectedPlanId })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await subscribe(mentor.id, selectedPlanId);
+      if (data.success) {
         toast({ title: 'Abonnement Premium réussi', description: 'Votre abonnement Premium a été activé.', className: 'bg-green-500 text-white' });
         // Refresh mentor data
         const user = getUserFromLocalStorage();

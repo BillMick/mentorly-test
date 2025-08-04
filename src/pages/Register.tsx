@@ -11,8 +11,10 @@ import Footer from "@/components/Footer";
 import { toast } from "@/components/ui/use-toast";
 import { registerUser } from "@/services/auth/register";
 import { registerSchema } from "@/services/validation/registerSchema";
-// import { sendConfirmationEmail } from "@/services/auth/sendConfirmationEmail";
+import { sendVerificationMail } from "@/services/auth/sendVerificationMail";
 import { z } from "zod";
+import { addHours } from "date-fns";
+import { maskEmail } from "@/helpers/maskEmail";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -29,6 +31,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   // Scroll to top when component mounts or when URL changes
   useEffect(() => {
@@ -61,15 +65,18 @@ const Register = () => {
         role: validatedData.role,
       });
 
-      // Store user info
-      localStorage.setItem("user", JSON.stringify(result.user));
-      // sendConfirmationEmail({
-      //   id: result.user.id,
-      //   email: result.user.email,
-      //   fullName: result.user.fullname,
-      // });
-  
-      navigate(result.user.role === "MENTOR" ? "/mentor-dashboard" : "/mentee-dashboard");
+      const expiresAt = addHours(new Date(), 12).getTime();
+      localStorage.setItem("user", JSON.stringify({ user: result.user, expiresAt }));
+
+      // Send verification email
+      const res = await sendVerificationMail({
+        email: result.user.email,
+        fullname: result.user.profile.fullname
+      });
+
+      // Show success message instead of redirecting
+      setUserEmail(result.user.email);
+      setRegistrationSuccess(true);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const messages = error.errors.map((e) => e.message).join(' ');
@@ -127,7 +134,44 @@ const Register = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {registrationSuccess ? (
+                <div className="flex flex-col items-center justify-center text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mail className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground mb-3">Vérification envoyée !</h2>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    Un email de vérification a été envoyé à <span className="font-medium text-foreground">{maskEmail(userEmail)}</span>.
+                    <br />
+                    Veuillez cliquer sur le lien dans l'email pour activer votre compte.
+                  </p>
+                  <div className="space-y-3 w-full">
+                    <Button
+                      onClick={() => navigate('/login')}
+                      className="w-full h-12 bg-gradient-to-r from-primary via-accent to-secondary hover:from-primary/80 hover:via-accent/80 hover:to-secondary/80 text-white font-medium rounded-xl"
+                    >
+                      Aller à la connexion
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setRegistrationSuccess(false);
+                        setFormData({
+                          fullName: "",
+                          email: "",
+                          password: "",
+                          confirmPassword: "",
+                          role: roleFromUrl === "mentor" ? "mentor" : "mentee"
+                        });
+                      }}
+                      className="w-full h-12 rounded-xl"
+                    >
+                      Créer un autre compte
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Role Selection */}
                 <div className="space-y-4">
                   <Label className="text-base font-medium text-foreground">Je veux :</Label>
@@ -273,9 +317,11 @@ const Register = () => {
                     )}
                   </span>
                 </Button>
-              </form>
+                </form>
+              )}
 
-              <div className="mt-8 text-center">
+              {!registrationSuccess && (
+                <div className="mt-8 text-center">
                 <div className="connection-line w-16 mx-auto mb-4"></div>
                 <p className="text-sm text-muted-foreground">
                   Vous avez déjà un compte ?{" "}
@@ -283,7 +329,8 @@ const Register = () => {
                     Connectez-vous ici
                   </Link>
                 </p>
-              </div>
+                </div>
+              )}
             </CardContent>
           </div>
         </div>

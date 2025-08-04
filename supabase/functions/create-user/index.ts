@@ -209,21 +209,21 @@ serve(async (req) => {
   }
 
   // Send verification email
-  try {
-    const sendRes = await fetch(Deno.env.get('VITE_SUPABASE_FUNCTION_URL') + '/send-verification-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`, },
-      body: JSON.stringify({ email: user.email })
-    });
-    if (!sendRes.ok) {
-      const errText = await sendRes.text();
-      console.error('Erreur lors de l\'envoi de l\'email de vérification:', errText);
-    }
-  } catch (e) {
-    console.error('Erreur lors de l\'appel à send-verification-email:', e);
-  }
+  // try {
+  //   const sendRes = await fetch(Deno.env.get('VITE_SUPABASE_FUNCTION_URL') + '/send-verification-email', {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`, },
+  //     body: JSON.stringify({ email: user.email })
+  //   });
+  //   if (!sendRes.ok) {
+  //     const errText = await sendRes.text();
+  //     console.error('Erreur lors de l\'envoi de l\'email de vérification:', errText);
+  //   }
+  // } catch (e) {
+  //   console.error('Erreur lors de l\'appel à send-verification-email:', e);
+  // }
 
   // Return enriched user object
   return new Response(

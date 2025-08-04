@@ -14,6 +14,9 @@ import { toast } from "@/components/ui/use-toast";
 import { getMenteeById } from "@/services/profile/getMenteeById";
 import { addHours } from "date-fns";
 import { getSubscriptionPlans } from "@/services/subscription/getSubscriptionPlans";
+import { getMentorById } from "@/services/profile/getMentorById";
+import { updateRequestStatus } from "@/services/request/updateRequestStatus";
+import { subscribe } from "@/services/subscription/subscribe";
 
 const MenteeDashboard = () => {
   const [mentee, setMentee] = useState<any | null>(null);
@@ -55,10 +58,7 @@ const MenteeDashboard = () => {
       const names: Record<string, string> = {};
       await Promise.all(uniqueMentorIds.map(async (id: string) => {
         try {
-          const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/get-mentor-by-id?id=${id}`, {
-            headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }
-          });
-          const data = await res.json();
+          const data = await getMentorById(id);
           names[id] = data.mentor?.profile?.fullname || data.mentor?.email || 'Inconnu';
         } catch {
           names[id] = 'Inconnu';
@@ -133,15 +133,8 @@ const MenteeDashboard = () => {
   const handleRequestAction = async (requestId: number, action: string) => {
     if (action === 'cancel') {
       try {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/update-request-status`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ requestId, status: 'CANCELLED' })
-        });
-        if (res.ok) {
+        const res = await updateRequestStatus({ requestId: requestId, status: 'CANCELLED' });
+        if (res.success) {
           toast({
             title: 'Demande annulée',
             description: 'Votre demande de mentorat a bien été annulée.',
@@ -180,16 +173,8 @@ const MenteeDashboard = () => {
     if (!selectedPlanId || !mentee) return;
     setSubscribing(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ userId: mentee.id, planId: selectedPlanId })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await subscribe(mentee.id, selectedPlanId);
+      if (data.success) {
         toast({ title: 'Abonnement réussi', description: 'Votre abonnement a été activé.', className: 'bg-green-500 text-white' });
         setShowSubscribeModal(false);
         // Refresh mentee data

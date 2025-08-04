@@ -10,8 +10,11 @@ import Footer from "@/components/Footer";
 import { toast } from "@/components/ui/use-toast";
 import { loginSchema } from "@/services/validation/loginSchema";
 import { loginUser } from "@/services/auth/auth";
+import { sendVerificationMail } from "@/services/auth/sendVerificationMail";
 import { z } from "zod";
 import { addHours } from "date-fns";
+import { getUserFromLocalStorage } from "@/helpers/getUserFromLocalStorage";
+import { maskEmail } from "@/helpers/maskEmail";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -21,6 +24,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [verificationPending, setVerificationPending] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +41,11 @@ const Login = () => {
       if (result.user && result.user.is_verified === false) {
         setVerificationPending(true);
         setUnverifiedEmail(result.user.email);
+        toast({
+          title: 'Compte non vérifié',
+          description: 'Veuillez vérifier votre boîte mail pour activer votre compte.',
+          variant: 'destructive',
+        });
         setIsLoading(false);
         return;
       }
@@ -67,6 +76,42 @@ const Login = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+
+      // Resend verification email
+      const user = getUserFromLocalStorage();
+      
+      const res = await sendVerificationMail({
+        email: user.email,
+        fullname: user.profile.fullname
+      });
+      
+      if (res.success) {
+        toast({
+          title: 'Email envoyé',
+          description: `Un nouvel email de vérification a été envoyé à ${maskEmail(unverifiedEmail)}.`,
+          className: 'bg-green-500 text-white'
+        });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: res.error || "Erreur lors de l'envoi de l'email de vérification...",
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: "Erreur lors de l'envoi de l'email de vérification..",
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header />
@@ -94,11 +139,15 @@ const Login = () => {
                   <AlertCircle className="w-10 h-10 text-yellow-500 mb-2" />
                   <h2 className="text-lg font-semibold mb-2">Vérification de l'email requise</h2>
                   <p className="mb-4 text-gray-700">
-                    Votre adresse email (<span className="font-medium">{unverifiedEmail}</span>) n'est pas encore vérifiée.<br />
+                    Votre adresse email (<span className="font-medium">{maskEmail(unverifiedEmail)}</span>) n'est pas encore vérifiée.<br />
                     Veuillez cliquer sur le lien de vérification envoyé à votre adresse email pour activer votre compte.
                   </p>
-                  <Button disabled className="mb-2 w-full">
-                    Renvoyer l'email de vérification (bientôt disponible)
+                  <Button 
+                    onClick={handleResendVerification}
+                    disabled={isResending}
+                    className="mb-2 w-full"
+                  >
+                    {isResending ? "Envoi en cours..." : "Renvoyer l'email de vérification"}
                   </Button>
                   <Button variant="outline" className="w-full" onClick={() => setVerificationPending(false)}>
                     Retour à la connexion

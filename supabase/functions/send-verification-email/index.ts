@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, fullname } = await req.json();
     if (!email) {
       return new Response(JSON.stringify({ error: 'Email requis.' }), { status: 400, headers: corsHeaders });
     }
@@ -26,7 +26,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Find user by email
     const { data: user, error } = await supabase
       .from('User')
       .select('id, email, is_verified')
@@ -41,7 +40,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ message: 'Email déjà vérifié.' }), { status: 200, headers: corsHeaders });
     }
 
-    // Generate a verification token (JWT)
+    // Generate verification token
     const jwtSecret = Deno.env.get('JWT_SECRET')!;
     const payload = {
       sub: user.id,
@@ -58,67 +57,62 @@ serve(async (req) => {
     );
     const token = await create({ alg: 'HS256', typ: 'JWT' }, payload, key);
 
-    // Compose verification link
     const frontendUrl = Deno.env.get('FRONTEND_URL') || 'http://192.168.1.156:8080';
     const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
-    // Send email using Resend
-    // const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    // const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL');
-    // if (!resendApiKey || !resendFromEmail) {
-    //   return new Response(JSON.stringify({ error: 'Email provider not configured.' }), { status: 500, headers: corsHeaders });
-    // }
-    // const subject = 'Vérifiez votre adresse email';
-    // const html = `<p>Bonjour,</p><p>Merci de vous être inscrit. Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse email :</p><p><a href="${verificationLink}">${verificationLink}</a></p><p>Ce lien expirera dans 24 heures.</p>`;
-    // const emailRes = await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${resendApiKey}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     from: resendFromEmail,
-    //     to: user.email,
-    //     subject,
-    //     html,
-    //   }),
-    // });
-    // Send email using Gmail SMTP
-    const gmailUser = Deno.env.get('GMAIL_USER');
-    const gmailPass = Deno.env.get('GMAIL_PASS');
-    if (!gmailUser || !gmailPass) {
-      return new Response(JSON.stringify({ error: 'Gmail SMTP not configured.' }), { status: 500, headers: corsHeaders });
+    // Send email with SendGrid
+    const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
+    const senderEmail = Deno.env.get('SENDGRID_FROM_EMAIL');
+    if (!sendgridApiKey || !senderEmail) {
+      return new Response(JSON.stringify({ error: 'SendGrid non configuré.' }), { status: 500, headers: corsHeaders });
     }
 
-    const client = new SmtpClient();
-    await client.connectTLS({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: gmailUser,
-      password: gmailPass,
+    const subject = 'Vérifiez votre adresse email';
+    let html;
+    if (fullname) {
+      html = `
+              <p>Bonjour, ${fullname}</p>
+              <p>Merci de vous être inscrit. Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse email :</p>
+              <p><a href="${verificationLink}">${verificationLink}</a></p>
+              <p>Ce lien expirera dans 24 heures.</p>
+            `;
+    }
+    else {
+      html = `
+            <p>Bonjour,</p>
+            <p>Merci de vous être inscrit. Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse email :</p>
+            <p><a href="${verificationLink}">${verificationLink}</a></p>
+            <p>Ce lien expirera dans 24 heures.</p>
+          `;
+    }
+    
+
+    const emailRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sendgridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: user.email }],
+            subject: subject,
+          },
+        ],
+        from: { email: senderEmail, name: "MentorConnect" },
+        content: [{ type: 'text/html', value: html }],
+      }),
     });
-
-    const subject = "Vérifiez votre adresse email";
-    const html = `<p>Bonjour,</p><p>Merci de vous être inscrit. Veuillez cliquer sur le lien ci-dessous pour vérifier votre adresse email :</p><p><a href="${verificationLink}">${verificationLink}</a></p><p>Ce lien expirera dans 24 heures.</p>`;
-
-    const emailRes = await client.send({
-      from: gmailUser,
-      to: user.email,
-      subject,
-      content: html,
-      html,
-    });
-
-    await client.close();
 
     if (!emailRes.ok) {
-      const errText = await emailRes.text();
-      return new Response(JSON.stringify({ error: 'Erreur lors de l\'envoi de l\'email: ' + errText }), { status: 500, headers: corsHeaders });
+      const errorText = await emailRes.text();
+      return new Response(JSON.stringify({ error: 'Erreur lors de l\'envoi de l\'email: ' + errorText }), { status: 500, headers: corsHeaders });
     }
 
-    return new Response(JSON.stringify({ message: 'Email de vérification envoyé.' }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ success: true, message: 'Email de vérification envoyé.' }), { status: 200, headers: corsHeaders });
   } catch (e) {
     console.error('Unexpected error:', e);
     return new Response(JSON.stringify({ error: 'Erreur interne du serveur.' }), { status: 500, headers: corsHeaders });
   }
-}); 
+});

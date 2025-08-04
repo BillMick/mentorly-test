@@ -10,8 +10,8 @@ export async function getMentorById(userId: string) {
         });
 
         if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Échec lors du chargement du mentor.");
+            const errorText = await res.text();
+            throw new Error(errorText || "Échec lors du chargement du mentor.");
         }
 
         return await res.json();

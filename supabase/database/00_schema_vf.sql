@@ -74,6 +74,8 @@ CREATE TABLE "SubscriptionPlan" (
     "name" TEXT NOT NULL,
     "price_eur" DECIMAL(10,2) NOT NULL,
     "duration_days" INTEGER NOT NULL,
+    "benefits" TEXT[],
+    "category" "Role" NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP

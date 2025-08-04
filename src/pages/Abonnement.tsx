@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getMenteeById } from "@/services/profile/getMenteeById";
 import { getMentorById } from "@/services/profile/getMentorById";
+import { subscribe } from "@/services/subscription/subscribe";
 
 const Abonnement = () => {
   const navigate = useNavigate();
@@ -92,16 +93,8 @@ const Abonnement = () => {
     if (!selectedPlanId || !user) return;
     setSubscribing(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ userId: user.id, planId: selectedPlanId })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await subscribe(user.id, selectedPlanId);
+      if (data.success) {
         toast({ title: 'Abonnement réussi', description: 'Votre abonnement a été activé.', className: 'bg-green-500 text-white' });
         await refreshUser();
         setSelectedPlanId(null);

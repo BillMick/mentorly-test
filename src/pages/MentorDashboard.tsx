@@ -10,17 +10,18 @@ import Footer from "@/components/Footer";
 import { getUserFromLocalStorage } from "@/helpers/getUserFromLocalStorage";
 import { getMentorById } from "@/services/profile/getMentorById";
 import { getMenteeById } from "@/services/profile/getMenteeById";
-import { updateRequestStatus } from "@/services/profile/updateRequestStatus";
+import { updateRequestStatus } from "@/services/request/updateRequestStatus";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 import { addHours } from "date-fns";
 import { getSubscriptionPlans } from "@/services/subscription/getSubscriptionPlans";
 import { unsubscribe } from "@/services/subscription/unsubscribe";
+import { subscribe } from "@/services/subscription/subscribe";
 
 const MentorDashboard = () => {  
   const [mentor, setMentor] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
   const navigate = useNavigate();
   const [menteeNames, setMenteeNames] = useState<Record<string, string>>({});
   const [menteesLoading, setMenteesLoading] = useState(false);
@@ -107,7 +108,7 @@ const MentorDashboard = () => {
     }
   }, [mentor]);
 
-  const handleRequestAction = async (requestId: string, action: 'accept' | 'reject') => {
+  const handleRequestAction = async (requestId: number, action: 'accept' | 'reject') => {
     if (!mentor) return;
     
     const status = action === 'accept' ? 'ACCEPTED' : 'REFUSED';
@@ -157,16 +158,8 @@ const MentorDashboard = () => {
     if (!selectedPlanId || !mentor) return;
     setSubscribing(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/subscribe`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ userId: mentor.id, planId: selectedPlanId })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await subscribe(mentor.id, selectedPlanId);
+      if (data.success) {
         toast({ title: 'Abonnement Premium réussi', description: 'Votre abonnement Premium a été activé.', className: 'bg-green-500 text-white' });
         setShowSubscribeModal(false);
         await fetchMentorData();

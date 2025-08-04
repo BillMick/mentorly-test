@@ -140,7 +140,7 @@ serve(async (req) => {
             profile: MentorProfile(fullname)
           )
         ),
-        subscriptions: Subscription!Subscription_mentee_id_fkey(*, plan: SubscriptionPlan!Subscription_plan_id_fkey(*))
+        subscriptions: Subscription!Subscription_user_id_fkey(*, plan: SubscriptionPlan!Subscription_plan_id_fkey(*))
       `)
       .eq("id", userId)
       .single();

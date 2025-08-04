@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Loader2, CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { verifyEmailAddress } from "@/services/auth/verifyEmailAddress";
+import { sendVerificationMail } from "@/services/auth/sendVerificationMail";
+import { maskEmail } from "@/helpers/maskEmail";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -14,51 +17,49 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (!token) {
-      setStatus("error");
-      setMessage("Lien de vérification invalide ou manquant.");
-      return;
-    }
-    // Call backend to verify
-    fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/verify-email?token=${token}`)
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok) {
+    const verifyEmail = async () => {
+      const token = searchParams.get("token");
+      if (!token) {
+        setStatus("error");
+        setMessage("Lien de vérification invalide ou manquant.");
+        return;
+      }
+
+      try {
+        const data = await verifyEmailAddress(token);
+        if (data.success) {
           setStatus("success");
           setMessage("Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.");
         } else {
           setStatus("error");
-          setMessage(data.error || "Erreur lors de la vérification de l'email.");
+          setMessage(data.error || "Erreur lors de la vérification de l'email...");
+          
           // Try to decode email from token for resend
           try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             if (payload.email) setEmail(payload.email);
-          } catch {}
+          } catch (error) {
+            console.error("Error decoding token:", error);
+          }
         }
-      })
-      .catch(() => {
+      } catch (error) {
         setStatus("error");
-        setMessage("Erreur lors de la vérification de l'email.");
-      });
+        setMessage("Erreur lors de la vérification de l'email..");
+        console.error("Unexpected error:", error);
+      }
+    };
+
+    verifyEmail(); // Call the async function
   }, [searchParams]);
 
   const handleResend = async () => {
     setIsResending(true);
     setMessage("");
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTION_URL}/send-verification-email`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await sendVerificationMail({email, fullname: ""});
+      if (data.success) {
         setStatus("resend");
-        setMessage("Un nouvel email de vérification a été envoyé à " + email + ".");
+        setMessage("Un nouvel email de vérification a été envoyé à " + maskEmail(email) + ".");
       } else {
         setMessage(data.error || "Erreur lors de l'envoi de l'email de vérification.");
       }
@@ -121,4 +122,4 @@ const VerifyEmail = () => {
   );
 };
 
-export default VerifyEmail; 
+export default VerifyEmail;
