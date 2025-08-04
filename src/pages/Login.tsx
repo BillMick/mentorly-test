@@ -123,7 +123,7 @@ const Login = () => {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Bon retour</h1>
-            <p className="text-gray-600">Connectez-vous à votre compte Mentorly-test</p>
+            <p className="text-gray-600">Connectez-vous à votre compte Mentorly</p>
           </div>
 
           <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
