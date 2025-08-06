@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,21 +15,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { toast } from "@/components/ui/use-toast";
 import { addHours } from "date-fns";
 import { getSubscriptionPlans } from "@/services/subscription/getSubscriptionPlans";
-import { unsubscribe } from "@/services/subscription/unsubscribe";
-import { subscribe } from "@/services/subscription/subscribe";
+import { createPayment } from "@/services/payment/createPayment";
+import { verifyPayment } from "@/services/payment/verifyPayment";
 
 const MentorDashboard = () => {  
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [mentor, setMentor] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const navigate = useNavigate();
   const [menteeNames, setMenteeNames] = useState<Record<string, string>>({});
   const [menteesLoading, setMenteesLoading] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [plans, setPlans] = useState<any[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -60,6 +62,58 @@ const MentorDashboard = () => {
     }
   };
 
+  // Helper to refresh user data after subscribe
+  const refreshUser = async () => {
+    if (!mentor) return;
+    const user = getUserFromLocalStorage();
+    if (!user) return;
+    
+    const refreshed = await getMentorById(user.id);
+    if (refreshed?.mentor) {
+      // Update localStorage and state
+      const expiresAt = new Date().getTime() + 12 * 60 * 60 * 1000;
+      localStorage.setItem("user", JSON.stringify({ user: refreshed.mentor, expiresAt }));
+      setMentor(refreshed.mentor);
+    }
+  };
+
+  // Handle payment verification on page load
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
+    
+    if (paymentStatus === 'success' && sessionId) {
+      setVerifying(true);
+      verifyPayment(sessionId)
+        .then(() => {
+          toast({ 
+            title: 'Paiement réussi', 
+            description: 'Votre abonnement a été activé avec succès.', 
+            className: 'bg-green-500 text-white' 
+          });
+          refreshUser();
+          // Clean URL
+          navigate('/mentor-dashboard', { replace: true });
+        })
+        .catch((err) => {
+          toast({ 
+            title: 'Erreur de vérification', 
+            description: err.message || 'Erreur lors de la vérification du paiement.', 
+            variant: 'destructive' 
+          });
+        })
+        .finally(() => setVerifying(false));
+    } else if (paymentStatus === 'cancelled') {
+      toast({ 
+        title: 'Paiement annulé', 
+        description: 'Votre paiement a été annulé.', 
+        variant: 'destructive' 
+      });
+      // Clean URL
+      navigate('/mentor-dashboard', { replace: true });
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     fetchMentorData();
   }, []);
@@ -86,26 +140,26 @@ const MentorDashboard = () => {
 
   useEffect(() => {
     if (!mentor) return;
-    // Check for valid Premium subscription
-    let valid = false;
-    if (Array.isArray(mentor.subscriptions) && mentor.subscriptions.length > 0) {
-      const now = new Date();
-      const sorted = [...mentor.subscriptions].sort((a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime());
-      const latest = sorted[0];
-      if (latest && latest.is_active && new Date(latest.end_date) >= now && latest.plan?.name === "Premium") {
-        valid = true;
+    
+    setPlansLoading(true);
+    getSubscriptionPlans().then(res => {
+      // Check if user has active subscription
+      const hasActiveSubscription = Array.isArray(mentor?.subscriptions) && mentor.subscriptions.length > 0 && 
+        mentor.subscriptions.some((sub: any) => sub.is_active && new Date(sub.end_date) >= new Date());
+      
+      // Filter plans by category, is_active status, and price > 0
+      let filteredPlans = (res.plans || []).filter((p: any) => 
+        p.category === "MENTOR" && p.price_eur > 0
+      );
+      
+      // If user has no active subscription, only show active plans
+      if (!hasActiveSubscription) {
+        filteredPlans = filteredPlans.filter((p: any) => p.is_active === true);
       }
-    }
-    if (!valid) {
-      setShowSubscribeModal(true);
-      setPlansLoading(true);
-      const fetchPlans = async () => {
-        const plans = await getSubscriptionPlans();
-        setPlans((plans.plans || []).filter((p: any) => p.category === "MENTOR"));
-      }
-      fetchPlans();
+      
+      setPlans(filteredPlans);
       setPlansLoading(false);
-    }
+    });
   }, [mentor]);
 
   const handleRequestAction = async (requestId: number, action: 'accept' | 'reject') => {
@@ -154,22 +208,22 @@ const MentorDashboard = () => {
     }
   };
 
-  const handleSubscribe = async () => {
+  const handlePayment = async () => {
     if (!selectedPlanId || !mentor) return;
-    setSubscribing(true);
+    setPaying(true);
     try {
-      const data = await subscribe(mentor.id, selectedPlanId);
-      if (data.success) {
-        toast({ title: 'Abonnement Premium réussi', description: 'Votre abonnement Premium a été activé.', className: 'bg-green-500 text-white' });
-        setShowSubscribeModal(false);
-        await fetchMentorData();
-      } else {
-        toast({ title: 'Erreur', description: data.error || 'Erreur lors de la souscription.', variant: 'destructive' });
-      }
-    } catch (err) {
-      toast({ title: 'Erreur réseau', description: 'Erreur réseau lors de la souscription.', variant: 'destructive' });
+      const data = await createPayment(selectedPlanId, mentor.id, mentor.email);
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+      setSelectedPlanId(null);
+    } catch (err: any) {
+      toast({ 
+        title: 'Erreur de paiement', 
+        description: err.message || 'Erreur lors de la création du paiement.', 
+        variant: 'destructive' 
+      });
     }
-    setSubscribing(false);
+    setPaying(false);
   };
 
   if (loading) {
@@ -456,7 +510,7 @@ const MentorDashboard = () => {
               if (Array.isArray(mentor.subscriptions) && mentor.subscriptions.length > 0) {
                 const sorted = [...mentor.subscriptions].sort((a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime());
                 latest = sorted[0];
-                if (latest && latest.is_active && new Date(latest.end_date) >= now && latest.plan?.name === "Premium") {
+                if (latest && latest.is_active && new Date(latest.end_date) >= now) {
                   valid = true;
                 }
               }
@@ -499,9 +553,9 @@ const MentorDashboard = () => {
                           ))}
                         </div>
                       )}
-                      <Button onClick={handleSubscribe} disabled={!selectedPlanId || subscribing || plansLoading} className="w-full mt-4">
-                        {subscribing ? 'Souscription...' : 'Valider et souscrire'}
-                      </Button>
+                      <Button onClick={handlePayment} disabled={!selectedPlanId || paying || plansLoading || verifying} className="w-full mt-4">
+                         {paying ? 'Redirection...' : verifying ? 'Vérification...' : 'Procéder au paiement'}
+                       </Button>
                     </div>
                   </div>
                 );

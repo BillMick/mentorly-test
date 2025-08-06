@@ -103,7 +103,7 @@ serve(async (req) => {
       sub: fullUser.id,
       email: fullUser.email,
       role: fullUser.role,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 2, // validity of 2h
     };
 
     const key = await crypto.subtle.importKey(

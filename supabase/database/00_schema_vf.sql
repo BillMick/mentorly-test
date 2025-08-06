@@ -72,6 +72,7 @@ CREATE TABLE "NumberOfVisits" (
 CREATE TABLE "SubscriptionPlan" (
     "id" SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
+    "stripe_plan_id" TEXT NOT NULL,
     "price_eur" DECIMAL(10,2) NOT NULL,
     "duration_days" INTEGER NOT NULL,
     "benefits" TEXT[],
@@ -85,12 +86,15 @@ CREATE TABLE "SubscriptionPlan" (
 CREATE TABLE "Subscription" (
     "id" SERIAL PRIMARY KEY,
     "user_id" TEXT NOT NULL,
-    "plan_id" INTEGER NOT NULL,
+    "plan_id" TEXT NOT NULL,
     "start_date" TIMESTAMP(3) NOT NULL,
     "end_date" TIMESTAMP(3) NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "stripe_session_id" TEXT NOT NULL,
+    "amount_paid" DECIMAL(10, 2) NOT NULL,
+    "currency" TEXT NOT NULL,
     CONSTRAINT "Subscription_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Subscription_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "SubscriptionPlan"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "Subscription_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "SubscriptionPlan"("stripe_plan_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- MentorshipRequest Table

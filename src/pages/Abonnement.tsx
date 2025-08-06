@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,16 +11,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getMenteeById } from "@/services/profile/getMenteeById";
 import { getMentorById } from "@/services/profile/getMentorById";
-import { subscribe } from "@/services/subscription/subscribe";
+import { createPayment } from "@/services/payment/createPayment";
+import { verifyPayment } from "@/services/payment/verifyPayment";
 
 const Abonnement = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any | null>(getUserFromLocalStorage());
   const [plans, setPlans] = useState<any[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [unsubscribing, setUnsubscribing] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [latest, setLatest] = useState<any>(null);
   const [valid, setValid] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,6 +58,43 @@ const Abonnement = () => {
     }
   };
 
+  // Handle payment verification on page load
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
+    
+    if (paymentStatus === 'success' && sessionId) {
+      setVerifying(true);
+      verifyPayment(sessionId)
+        .then(() => {
+          toast({ 
+            title: 'Paiement réussi', 
+            description: 'Votre abonnement a été activé avec succès.', 
+            className: 'bg-green-500 text-white' 
+          });
+          refreshUser();
+          // Clean URL
+          navigate('/abonnement', { replace: true });
+        })
+        .catch((err) => {
+          toast({ 
+            title: 'Erreur de vérification', 
+            description: err.message || 'Erreur lors de la vérification du paiement.', 
+            variant: 'destructive' 
+          });
+        })
+        .finally(() => setVerifying(false));
+    } else if (paymentStatus === 'cancelled') {
+      toast({ 
+        title: 'Paiement annulé', 
+        description: 'Votre paiement a été annulé.', 
+        variant: 'destructive' 
+      });
+      // Clean URL
+      navigate('/abonnement', { replace: true });
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -66,8 +106,10 @@ const Abonnement = () => {
       const hasActiveSubscription = Array.isArray(user?.subscriptions) && user.subscriptions.length > 0 && 
         user.subscriptions.some((sub: any) => sub.is_active && new Date(sub.end_date) >= new Date());
       
-      // Filter plans by category and is_active status
-      let filteredPlans = (res.plans || []).filter((p: any) => p.category === user.role);
+      // Filter plans by category, is_active status, and price > 0
+      let filteredPlans = (res.plans || []).filter((p: any) => 
+        p.category === user.role && p.price_eur > 0
+      );
       
       // If user has no active subscription, only show active plans
       if (!hasActiveSubscription) {
@@ -89,22 +131,23 @@ const Abonnement = () => {
     }
   }, [user, navigate]);
 
-  const handleSubscribe = async () => {
+  const handlePayment = async () => {
     if (!selectedPlanId || !user) return;
-    setSubscribing(true);
+    setPaying(true);
     try {
-      const data = await subscribe(user.id, selectedPlanId);
-      if (data.success) {
-        toast({ title: 'Abonnement réussi', description: 'Votre abonnement a été activé.', className: 'bg-green-500 text-white' });
-        await refreshUser();
-        setSelectedPlanId(null);
-      } else {
-        toast({ title: 'Erreur', description: data.error || 'Erreur lors de la souscription.', variant: 'destructive' });
-      }
-    } catch (err) {
-      toast({ title: 'Erreur réseau', description: 'Erreur réseau lors de la souscription.', variant: 'destructive' });
+      // const data = await createPayment(selectedPlanId);
+      const data = await createPayment(selectedPlanId, user.id, user.email);
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+      setSelectedPlanId(null);
+    } catch (err: any) {
+      toast({ 
+        title: 'Erreur de paiement', 
+        description: err.message || 'Erreur lors de la création du paiement.', 
+        variant: 'destructive' 
+      });
     }
-    setSubscribing(false);
+    setPaying(false);
   };
 
   const handleUnsubscribe = async () => {
@@ -178,8 +221,8 @@ const Abonnement = () => {
                     ))}
                   </div>
                 )}
-                <Button onClick={handleSubscribe} disabled={!selectedPlanId || subscribing || plansLoading} className="w-full mt-4">
-                  {subscribing ? 'Souscription...' : 'Valider et souscrire'}
+                <Button onClick={handlePayment} disabled={!selectedPlanId || paying || plansLoading || verifying} className="w-full mt-4">
+                  {paying ? 'Redirection...' : verifying ? 'Vérification...' : 'Procéder au paiement'}
                 </Button>
               </div>
             )}

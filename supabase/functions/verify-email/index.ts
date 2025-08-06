@@ -20,7 +20,7 @@ serve(async (req) => {
     const token = url.searchParams.get('token');
 
     if (!token) {
-      return new Response(JSON.stringify({ error: 'Token manquant.' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({success: false, error: 'Token manquant.' }), { status: 400, headers: corsHeaders });
     }
 
     const jwtSecret = Deno.env.get('JWT_SECRET')!;
@@ -38,12 +38,12 @@ serve(async (req) => {
       payload = await verify(token, key);
     } catch (e) {
       console.error("JWT verification failed:", e);
-      return new Response(JSON.stringify({ error: 'Token invalide ou expiré.' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({success: false, error: 'Token invalide ou expiré.' }), { status: 400, headers: corsHeaders });
     }
 
 
     if (!payload || payload.type !== 'email_verification' || !payload.sub) {
-      return new Response(JSON.stringify({ error: 'Token de vérification invalide.' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({success: false, error: 'Token de vérification invalide.' }), { status: 400, headers: corsHeaders });
     }
 
     const supabase = createClient(
@@ -51,19 +51,42 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Update user to set is_verified = true
-    const { error } = await supabase
-      .from('User')
-      .update({ is_verified: true })
-      .eq('id', payload.sub);
+    const { data: user, error: fetchError } = await supabase
+      .from("User")
+      .select("*")
+      .eq('id', payload.sub)
+      .maybeSingle();
 
-    if (error) {
-      return new Response(JSON.stringify({ error: 'Erreur lors de la mise à jour de la vérification.' }), { status: 500, headers: corsHeaders });
-    }
+      if (fetchError) {
+        console.error("fetchError: ", fetchError);
+        return new Response(JSON.stringify({success: false, error: 'Erreur lors de la mise à jour de la vérification.' }), { status: 500, headers: corsHeaders });
+      }
+      if (!user) {
+        console.log("Here...", user);
+        
+        return new Response(
+          JSON.stringify({ error: "Ce compte n'est pas enregistré." }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
+      else {
+        // Update user to set is_verified = true
+        const { error } = await supabase
+          .from('User')
+          .update({ is_verified: true })
+          .eq('id', payload.sub);
+    
+        if (error) {
+          console.error("Error: ", error);
+          return new Response(JSON.stringify({success: false, error: 'Erreur lors de la mise à jour de la vérification..' }), { status: 500, headers: corsHeaders });
+        }
+
+      }
+
 
     return new Response(JSON.stringify({success: true, message: 'Email vérifié avec succès.' }), { status: 200, headers: corsHeaders });
   } catch (e) {
     console.error('Unexpected error:', e);
-    return new Response(JSON.stringify({ error: 'Erreur interne du serveur.' }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({success: false, error: 'Erreur interne du serveur.' }), { status: 500, headers: corsHeaders });
   }
 }); 
