@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Users, Award, MessageSquare, ArrowLeft, Zap, Activity, TrendingUp, Brain, CheckCircle, Shield, Loader2, AlertCircle, Calendar as CalendarIcon, PhoneCall, MailQuestion, Languages, GraduationCap, Sprout, Briefcase } from "lucide-react";
+import { Star, MapPin, Users, Award, ArrowLeft, Activity, Brain, CheckCircle, Shield, Loader2, AlertCircle, Calendar as CalendarIcon, PhoneCall, MailQuestion, Languages, GraduationCap, Sprout, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -16,13 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Calendar as MentorCalendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { format, parse, isValid } from "date-fns";
 import { rateMentor } from "@/services/profile/rateMentor";
 import { requestMentorship } from "@/services/request/requestMentorship";
@@ -49,9 +42,6 @@ const MentorProfile = () => {
   const [requestSubject, setRequestSubject] = useState("");
   const [requestMessage, setRequestMessage] = useState("");
   const [requestLoading, setRequestLoading] = useState(false);
-  const [requestSuccess, setRequestSuccess] = useState("");
-  const [requestError, setRequestError] = useState("");
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [userRating, setUserRating] = useState<number | null>(null);
@@ -158,16 +148,17 @@ const MentorProfile = () => {
       if (user.id === mentorData.id) return; // Don't count self-visits
       try {
         const data = await visitMentorProfile({ mentorUserId: mentorData.id, visitorUserId: user.id })
-        if (!data.success) {
-          toast({
-            title: "Erreur de comptage de visite",
-            description: data.error || "Impossible de compter la visite.",
-            variant: "destructive",
-          });
-        }
+        
+        // if (!data.success) {
+        //   toast({
+        //     title: "Erreur de comptage de visite",
+        //     description: data.error || "Impossible de compter la visite.",
+        //     variant: "destructive",
+        //   });
+        // }
       } catch (err) {
         toast({
-          title: "Erreur réseau",
+          title: "Erreur réseau..",
           description: err.message || "Impossible de compter la visite.",
           variant: "destructive",
         });
@@ -563,7 +554,7 @@ const MentorProfile = () => {
                         }
                       } catch (err) {
                         toast({
-                          title: "Erreur réseau",
+                          title: "Erreur réseau...",
                           description: "Erreur réseau ou serveur.",
                           variant: "destructive",
                         });

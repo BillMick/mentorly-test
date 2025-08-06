@@ -27,7 +27,7 @@ serve(async (req) => {
     const { mentorUserId, visitorUserId } = await req.json();
     if (!mentorUserId || !visitorUserId) {
       return new Response(
-        JSON.stringify({ error: "Missing mentorUserId or visitorUserId." }),
+        JSON.stringify({success: false, error: "Missing mentorUserId or visitorUserId." }),
         { status: 400, headers: corsHeaders }
       );
     }
@@ -49,7 +49,7 @@ serve(async (req) => {
       .maybeSingle();
     if (fetchError) {
       return new Response(
-        JSON.stringify({ error: "Error fetching visit record." }),
+        JSON.stringify({success: false, error: "Error fetching visit record." }),
         { status: 500, headers: corsHeaders }
       );
     }
@@ -73,7 +73,7 @@ serve(async (req) => {
       .insert({ user_id: mentorUserId, visitor_id: visitorUserId });
     if (insertError) {
       return new Response(
-        JSON.stringify({ error: "Error inserting visit record." }),
+        JSON.stringify({ success: false, error: "Error inserting visit record." }),
         { status: 500, headers: corsHeaders }
       );
     }
@@ -89,14 +89,3 @@ serve(async (req) => {
   }
 });
 
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/visit-mentor-profile' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/

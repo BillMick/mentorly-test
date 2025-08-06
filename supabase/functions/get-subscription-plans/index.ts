@@ -34,15 +34,11 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    console.log("Fetching prices from Stripe...");
-
     // Fetch all active prices from Stripe
     const prices = await stripe.prices.list({
       active: true,
       expand: ['data.product'],
     });
-
-    console.log(`Found ${prices.data.length} active prices from Stripe`);
 
     // Transform Stripe prices to match the expected format
     const plans = prices.data.map(price => {
@@ -72,8 +68,6 @@ serve(async (req) => {
         } : null
       };
     });
-
-    console.log("Synchronizing with SubscriptionPlan table...");
 
     // Synchronize with SubscriptionPlan table
     for (const plan of plans) {
@@ -110,8 +104,6 @@ serve(async (req) => {
 
           if (updateError) {
             console.error(`Error updating plan ${plan.stripe_plan_id}:`, updateError);
-          } else {
-            console.log(`Updated plan: ${plan.name}`);
           }
         } else {
           // Insert new plan
@@ -124,8 +116,6 @@ serve(async (req) => {
 
           if (insertError) {
             console.error(`Error inserting plan ${plan.stripe_plan_id}:`, insertError);
-          } else {
-            console.log(`Inserted new plan: ${plan.name}`);
           }
         }
       } catch (planError) {
@@ -144,8 +134,6 @@ serve(async (req) => {
       console.error('Error deactivating obsolete plans:', deactivateError);
     }
 
-    console.log("Synchronization completed successfully");
-
     // Return the plans for the frontend
     return new Response(
       JSON.stringify({ plans: plans }),
@@ -159,14 +147,3 @@ serve(async (req) => {
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request GET 'http://127.0.0.1:54321/functions/v1/get-subscription-plans' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json'
-
-*/

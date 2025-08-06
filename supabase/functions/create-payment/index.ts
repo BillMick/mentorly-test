@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +17,6 @@ serve(async (req) => {
   try {
     // Parse request body
     const body = await req.json();
-    console.log("BODY: ", body);
     
     const { plan_id, user_id, email } = body;
     if (!plan_id) throw new Error("Plan ID is required");
@@ -43,9 +41,6 @@ serve(async (req) => {
 
     // Check if a Stripe customer record exists for this user
     const customers = await stripe.customers.list({ email: email, limit: 1 });
-    console.log("CUSTOMERS: ", customers);
-    console.log("PRICE: ", price);
-    console.log("PRODUCT: ", product);
     
     let customerId;
     if (customers.data.length > 0) {

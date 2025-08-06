@@ -13,14 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
 
     // Parse request body
     const body = await req.json();
-    console.log("BODY: ", body);
     const { sessionId } = body;
     if (!sessionId) throw new Error("Session ID is required");
 

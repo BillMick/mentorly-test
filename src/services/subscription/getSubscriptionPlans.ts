@@ -7,7 +7,6 @@ export async function getSubscriptionPlans() {
                 Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             },
         });
-        // console.log("RES: ", await res.json());
         
         if (!res.ok) {
             const errorText = await res.text();

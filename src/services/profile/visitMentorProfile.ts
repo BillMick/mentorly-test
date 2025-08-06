@@ -16,5 +16,5 @@ export async function visitMentorProfile({ mentorUserId, visitorUserId }: { ment
     if (!res.ok || !data.success) {
         throw new Error(data.error || "Erreur lors de la prise en compte de la visite.");
     }
-    return data.rating;
+    return data;
 } 

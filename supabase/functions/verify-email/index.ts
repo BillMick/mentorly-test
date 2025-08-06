@@ -62,8 +62,6 @@ serve(async (req) => {
         return new Response(JSON.stringify({success: false, error: 'Erreur lors de la mise à jour de la vérification.' }), { status: 500, headers: corsHeaders });
       }
       if (!user) {
-        console.log("Here...", user);
-        
         return new Response(
           JSON.stringify({ error: "Ce compte n'est pas enregistré." }),
           { status: 404, headers: corsHeaders }
