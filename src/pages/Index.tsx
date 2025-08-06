@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, CheckCircle, Target, Star, ArrowRight, Heart, TrendingUp, Award, Clock } from "lucide-react";
+import { Search, Users, CheckCircle, Target, Star, ArrowRight, Heart, Award } from "lucide-react";
 import Header from "@/components/Header";
 import { useLocation } from "react-router-dom";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
-import GeneralSynoptic from "@/components/synoptics/GeneralSynoptic";
 import InteractiveProcessFlow from "@/components/InteractiveProcessFlow";
-import VerifyEmail from "./VerifyEmail";
 import { logout as logoutHelper } from "@/helpers/logout";
 import { getUserFromLocalStorage } from "@/helpers/getUserFromLocalStorage";
 import { fetchMentors } from "@/services/profile/fetchMentors";
@@ -772,7 +768,7 @@ const Index = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <Link to="/register">
+                <Link to="/register?role=mentor">
                   <Button variant="outline" size="lg" className="border-2 border-white/30 text-black hover:bg-white/10 px-8 py-4 rounded-lg transition-all duration-200 text-lg font-semibold">
                     Devenir mentor
                   </Button>
