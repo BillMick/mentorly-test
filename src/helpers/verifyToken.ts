@@ -21,11 +21,20 @@ function parseJwt(token: string) {
 
 export function verifyToken(): string | null {
   const token = localStorage.getItem('token');
-  if (!token) return null;
+  if (!token) {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    return null
+  };
   const payload = parseJwt(token);
   if (!payload || !payload.exp) return null;
   // exp is in seconds since epoch
   const now = Math.floor(Date.now() / 1000);
-  if (payload.exp < now) return null;
+  
+  if (payload.exp < now) {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    return null
+  }
   return token;
 } 

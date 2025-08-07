@@ -300,7 +300,7 @@ const MentorProfileSettings = () => {
     try {
       const result = await updateMentorProfile(body);
       
-      const expiresAt = addHours(new Date(), 12).getTime();
+      const expiresAt = addHours(new Date(), 2).getTime();
       localStorage.setItem("user", JSON.stringify({ user: result.user, expiresAt }));
       setMentor(result.user);
 

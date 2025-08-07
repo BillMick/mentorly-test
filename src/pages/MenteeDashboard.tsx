@@ -97,7 +97,7 @@ const MenteeDashboard = () => {
     }
       const menteeRes = await getMenteeById(user.id);
       setMentee(menteeRes.mentee);
-      const expiresAt = addHours(new Date(), 12).getTime();
+      const expiresAt = addHours(new Date(), 2).getTime();
       localStorage.setItem("user", JSON.stringify({ user: menteeRes.mentee, expiresAt }));
       setLoading(false);
     };

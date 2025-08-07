@@ -51,7 +51,7 @@ const Login = () => {
       }
 
       // Store user and token info with 12h expiration
-      const expiresAt = addHours(new Date(), 12).getTime();
+      const expiresAt = addHours(new Date(), 2).getTime();
       localStorage.setItem("user", JSON.stringify({ user: result.user, expiresAt }));
       localStorage.setItem("token", result.token);
       

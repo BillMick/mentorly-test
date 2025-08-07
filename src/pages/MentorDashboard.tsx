@@ -52,7 +52,7 @@ const MentorDashboard = () => {
       const freshMentorData = await response;
       setMentor(freshMentorData.mentor);
       
-      const expiresAt = addHours(new Date(), 12).getTime();
+      const expiresAt = addHours(new Date(), 2).getTime();
       localStorage.setItem("user", JSON.stringify({ user: freshMentorData.mentor, expiresAt }));
     } catch (error) {
       console.error("Erreur lors du chargement du mentor :", error);
